@@ -21,8 +21,8 @@ public class Test
     [Fact]
     public void Part2()
     {
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day05/input.txt");
-        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day05/sample.txt");
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day05/input.txt");
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day05/sample.txt");
         long result = FindLowestLocationAllSeeds(lines);
         Assert.Equal(46, result);
     }
