@@ -1,4 +1,5 @@
 
+using System.Collections.Concurrent;
 using System.Data;
 using System.Text.RegularExpressions;
 
@@ -44,22 +45,34 @@ public class Test
 
     private long FindLowestLocationAllSeeds(string[] lines)
     {
-        List<long> locations = new();
+        ConcurrentBag<long> locations = new();
         var seeds = GetNumbers(lines.First());
         var maps = ParseMaps(lines);
+        List<Thread> threads = new();
         for(int i = 0; i < seeds.Count; i = i + 2)
         {
             (long startSeed, long endSeed) = (seeds[i], seeds[i] + seeds[i+1]);
-            for(long seed = startSeed; seed < endSeed; seed++)
-            {
-                long val = seed;
-                foreach(var map in maps)
-                    val = Remap(map, val);
-                locations.Add(val);
-            }
+            Thread t = new Thread(() => FindLowestLocationConcurrent(maps, locations, startSeed, endSeed));
+            t.Start();
+            threads.Add(t);
         }
+        foreach(var thread in threads)
+            thread.Join();
 
         return locations.Min();
+    }
+
+    private void FindLowestLocationConcurrent(List<List<(long,long,long)>> maps, ConcurrentBag<long> locations, long startSeed, long endSeed)
+    {
+        long lowestLocation = long.MaxValue;
+        for(long seed = startSeed; seed < endSeed; seed++)
+        {
+            long val = seed;
+            foreach(var map in maps)
+                val = Remap(map, val);
+            lowestLocation = Math.Min(lowestLocation, val);
+        }
+        locations.Add(lowestLocation);
     }
 
     private long Remap(List<(long,long,long)> maps, long val)
