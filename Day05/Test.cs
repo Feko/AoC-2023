@@ -17,6 +17,15 @@ public class Test
         Assert.Equal(35, result);
     }
 
+    [Fact]
+    public void Part2()
+    {
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day05/input.txt");
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day05/sample.txt");
+        long result = FindLowestLocationAllSeeds(lines);
+        Assert.Equal(46, result);
+    }
+
     private long FindLowestLocation(string[] lines)
     {
         List<long> locations = new();
@@ -28,6 +37,26 @@ public class Test
             foreach(var map in maps)
                 val = Remap(map, val);
             locations.Add(val);
+        }
+
+        return locations.Min();
+    }
+
+    private long FindLowestLocationAllSeeds(string[] lines)
+    {
+        List<long> locations = new();
+        var seeds = GetNumbers(lines.First());
+        var maps = ParseMaps(lines);
+        for(int i = 0; i < seeds.Count; i = i + 2)
+        {
+            (long startSeed, long endSeed) = (seeds[i], seeds[i] + seeds[i+1]);
+            for(long seed = startSeed; seed < endSeed; seed++)
+            {
+                long val = seed;
+                foreach(var map in maps)
+                    val = Remap(map, val);
+                locations.Add(val);
+            }
         }
 
         return locations.Min();
