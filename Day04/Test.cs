@@ -20,8 +20,8 @@ public class Test
     [Fact]
     public void Part2()
     {
-        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day04/sample.txt");
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day04/input.txt");
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day04/sample.txt");
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day04/input.txt");
         int[] amounts = new int[lines.Length];
         Array.Fill(amounts, 1);
         for(int i =0;i<lines.Length; i++)
