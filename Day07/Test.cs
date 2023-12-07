@@ -67,36 +67,11 @@ public class Test
 
         public override long GetHandType(string cards)
         {
-            if(Cards.IndexOf('J') == -1)
+            if(cards.IndexOf('J') == -1 || cards == "JJJJJ")
                 return base.GetHandType(cards);
-
-            int amountJokers = Cards.Count(x => x == 'J');
-            int amountOtherCards = Cards.Replace("J", "").ToCharArray().ToHashSet().Count();
-
-            long highestHand = 0;
-            if(amountJokers >= 4 || amountOtherCards == 1)
-                highestHand = 7; // It's already a Five-of-a-kind, or can make one
-            else if(amountJokers == 3)
-                highestHand = 6; // More than two different kinds of cards, but three jokers: Four of a kind possible
-            else if(amountJokers == 2)
-            {
-                // If got here, no five-of-a-kind possible, but maybe four?
-                if(amountOtherCards == 2)
-                    highestHand = 6;
-                else
-                    // three assorted, different cards. No four-of-a-kind possible, neither full-house. Three-of-a-kind is the best
-                    highestHand = 4; // Three-of-a-kind
-            }
-            else
-            {
-                // Just one joker, let's calculate all the possibilities
-                foreach(char c in _allCards)
-                {
-                    var possibility = Cards.Replace('J',c);
-                    highestHand = Math.Max(highestHand, base.GetHandType(possibility));
-                }
-            }
-            return highestHand;
+            
+            char mostFrequentNonJokerCard = cards.Replace("J","").ToCharArray().GroupBy(x => x).OrderByDescending(x => x.Count()).First().Key;
+            return base.GetHandType(cards.Replace('J', mostFrequentNonJokerCard));
         }
     }
 
