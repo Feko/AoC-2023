@@ -1,8 +1,5 @@
 
-using System.Collections.Concurrent;
 using System.Data;
-using System.Reflection.Metadata.Ecma335;
-using System.Text.RegularExpressions;
 
 namespace AOC2023.Day07;
 
@@ -11,23 +8,57 @@ public class Test
     
     public class Hand
     {
-        private static List<char> _allCards = "AKQJT98765432".ToCharArray().ToList();
+        private List<char> _allCards;
         public int Bid;
         private string Cards;
 
-        public Hand(string line)
+        public Hand(string line, string allCards)
         {
+            _allCards = allCards.ToCharArray().ToList();
             var parts = line.Split(' ');
             Cards = parts[0];
             Bid = Int32.Parse(parts[1]);
         }
 
-        public long GetHandScore() => GetHandType() * 1_000_000_000 + GetCardsScore();
+        public long GetHandScore() => GetHandType(Cards) * 1_000_000_000 + GetCardsScore();
+        public long GetHandScoreUsingJokers()
+        {
+            if(Cards.IndexOf('J') == -1)
+                return GetHandScore();
 
-        public long GetHandType()
+            int amountJokers = Cards.Count(x => x == 'J');
+            int amountOtherCards = Cards.Replace("J", "").ToCharArray().ToHashSet().Count();
+
+            long highestHand = 0;
+            if(amountJokers >= 4 || amountOtherCards == 1)
+                highestHand = 7; // It's already a Five-of-a-kind, or can make one
+            else if(amountJokers == 3)
+                highestHand = 6; // More than two different kinds of cards, but three jokers: Four of a kind possible
+            else if(amountJokers == 2)
+            {
+                // If got here, no five-of-a-kind possible, but maybe four?
+                if(amountOtherCards == 2)
+                    highestHand = 6;
+                else
+                    // three assorted, different cards. No four-of-a-kind possible, neither full-house. Three-of-a-kind is the best
+                    highestHand = 4; // Three-of-a-kind
+            }
+            else
+            {
+                // Just one joker, let's calculate all the possibilities
+                foreach(char c in _allCards)
+                {
+                    var possibility = Cards.Replace('J',c);
+                    highestHand = Math.Max(highestHand, GetHandType(possibility));
+                }
+            }
+            return highestHand * 1_000_000_000 + GetCardsScore();
+        }
+
+        public long GetHandType(string cards)
         {
             // 7 = Five of a Kind, 1 = High Card
-            var grouped = Cards.ToCharArray().GroupBy(x => x);
+            var grouped = cards.ToCharArray().GroupBy(x => x);
             if(grouped.Count() == 1)
                 return 7; // Five of a Kind
             
@@ -66,13 +97,31 @@ public class Test
     {
         // 250369992 = Too low
         // 250294748 <- Wrong, even lower
-        // var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/sample.txt");
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/input.txt");
-        var hands = lines.Select(line => new Hand(line)).ToList();
+        // 250370104
+
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/sample.txt");
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/input.txt");
+        string cards = "AKQJT98765432";
+        var hands = lines.Select(line => new Hand(line, cards)).ToList();
         hands = hands.OrderBy(hand => hand.GetHandScore()).ToList();
         long result = 0;
         for(int i =0; i < hands.Count(); i++)
             result += (i+1) * hands[i].Bid;
         Assert.Equal(6440, result);
+    }
+
+    [Fact]
+    public void Part2()
+    {
+        //251735672
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/sample.txt");
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/input.txt");
+        string cards = "AKQT98765432J";
+        var hands = lines.Select(line => new Hand(line, cards)).ToList();
+        hands = hands.OrderBy(hand => hand.GetHandScoreUsingJokers()).ToList();
+        long result = 0;
+        for(int i =0; i < hands.Count(); i++)
+            result += (i+1) * hands[i].Bid;
+        Assert.Equal(5905, result);
     }
 }
