@@ -22,9 +22,9 @@ public class Test
             Bid = Int32.Parse(parts[1]);
         }
 
-        public int GetHandScore() => GetHandType() * 100_000_000 + GetCardsScore();
+        public long GetHandScore() => GetHandType() * 1_000_000_000 + GetCardsScore();
 
-        public int GetHandType()
+        public long GetHandType()
         {
             // 7 = Five of a Kind, 1 = High Card
             var grouped = Cards.ToCharArray().GroupBy(x => x);
@@ -49,13 +49,13 @@ public class Test
             return 1; // High card
         }
 
-        public int GetCardsScore()
+        public long GetCardsScore()
         {
-            int score = 0;
-            int[] multipliers = {5_000_000, 400_000, 30_000, 2_000, 100};
+            long score = 0;
+            int[] multipliers = {12_000_000, 800_000, 60_000, 4_000, 100};
             for(int i = 0; i < Cards.Length; i++)
             {
-                score += multipliers[i] * (_allCards.Count() + 1 - _allCards.IndexOf(Cards[i]));
+                score += multipliers[i] * (_allCards.Count() - _allCards.IndexOf(Cards[i]));
             }
             return score;
         }
@@ -65,6 +65,7 @@ public class Test
     public void Part1()
     {
         // 250369992 = Too low
+        // 250294748 <- Wrong, even lower
         // var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/sample.txt");
         var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day07/input.txt");
         var hands = lines.Select(line => new Hand(line)).ToList();
