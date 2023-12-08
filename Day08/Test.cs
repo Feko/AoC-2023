@@ -32,7 +32,7 @@ public class Test
     private long MoveAll(Dictionary<string, (string left, string right)> graph)
     {
         List<string> paths = graph.Keys.Where(k => k.EndsWith("A")).ToList();
-        long[] moves = new long[paths.Count];
+        int[] moves = new int[paths.Count];
 
         for(int i =0; i < paths.Count; i++)
         {
@@ -42,25 +42,29 @@ public class Test
                 char nextMove = moveSequence[index];
                 paths[i] = nextMove == 'L' ? graph[paths[i]].left : graph[paths[i]].right;
             }while(!paths[i].EndsWith("Z"));
-
-            // if(moves.GroupBy(x => x).Count() == 1)
-            // {
-            //     shouldContinue = false;
-            //     break;
-            // }
         }
 
-        long[] accumulator = new long[moves.Length];
-        Array.Copy(moves, accumulator, moves.Length);
+        List<List<int>> denominators = moves.Select(m => GetDenominators(m)).ToList();
+        long result = 1;
+        foreach(var d in denominators)
+            result *= d.First();
 
-        while(accumulator.GroupBy(x => x).Count() > 1)
+        return result * denominators.First().Last();
+    }
+
+    private List<int> GetDenominators(int number)
+    {
+        List<int> result = new();
+        for(int i = 2; i < Math.Sqrt(number)+1; i++)
         {
-            long smallest = accumulator.Min();
-            int index = Array.IndexOf(accumulator, smallest);
-            accumulator[index] += moves[index];
+            if(number % i ==0)
+            {
+                result.Add(i);
+                if(i != number / i)
+                    result.Add(number / i);
+            }
         }
-
-        return accumulator[0];
+        return result;
     }
 
     private long GoFromTo(string from, string to, Dictionary<string, (string left, string right)> graph)
