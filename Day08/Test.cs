@@ -25,35 +25,42 @@ public class Test
         //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day08/sample2.txt");
         moveSequence = lines.First();
         var graph = Parse(lines);
-        int result = MoveAll(graph);
+        long result = MoveAll(graph);
         Assert.Equal(6, result);
     }
 
-    private int MoveAll(Dictionary<string, (string left, string right)> graph)
+    private long MoveAll(Dictionary<string, (string left, string right)> graph)
     {
         List<string> paths = graph.Keys.Where(k => k.EndsWith("A")).ToList();
-        int[] moves = new int[paths.Count];
-        bool shouldContinue = true;
+        long[] moves = new long[paths.Count];
 
-        while(shouldContinue)
+        for(int i =0; i < paths.Count; i++)
         {
-            for(int i =0; i < paths.Count; i++)
+            do
             {
-                do
-                {
-                    char nextMove = moveSequence[moves[i]++ % moveSequence.Length];
-                    paths[i] = nextMove == 'L' ? graph[paths[i]].left : graph[paths[i]].right;
-                }while(!paths[i].EndsWith("Z"));
+                int index = (int)(moves[i]++ % moveSequence.Length);
+                char nextMove = moveSequence[index];
+                paths[i] = nextMove == 'L' ? graph[paths[i]].left : graph[paths[i]].right;
+            }while(!paths[i].EndsWith("Z"));
 
-                if(moves.GroupBy(x => x).Count() == 1)
-                {
-                    shouldContinue = false;
-                    break;
-                }
-            }
+            // if(moves.GroupBy(x => x).Count() == 1)
+            // {
+            //     shouldContinue = false;
+            //     break;
+            // }
         }
 
-        return moves[0];
+        long[] accumulator = new long[moves.Length];
+        Array.Copy(moves, accumulator, moves.Length);
+
+        while(accumulator.GroupBy(x => x).Count() > 1)
+        {
+            long smallest = accumulator.Min();
+            int index = Array.IndexOf(accumulator, smallest);
+            accumulator[index] += moves[index];
+        }
+
+        return accumulator[0];
     }
 
     private long GoFromTo(string from, string to, Dictionary<string, (string left, string right)> graph)
