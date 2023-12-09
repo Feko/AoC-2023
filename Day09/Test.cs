@@ -37,7 +37,12 @@ public class Test
     }
 
     private int GetDiff(int left, int right)
-        => left < 0 && right < 0 ? Math.Abs(right) - Math.Abs(left) : right - left;
+        // => Math.Abs(right) - Math.Abs(left);
+        // => Math.Abs(Math.Abs(right) - Math.Abs(left));
+        // => left < 0 && right < 0 ? Math.Abs(right) - Math.Abs(left) : right - left;
+        // => left < 0 || right < 0 ? Math.Abs(right) - Math.Abs(left) : right - left;
+        // => Math.Abs(left < 0 || right < 0 ? Math.Abs(right) - Math.Abs(left) : right - left);
+        => right - left;
 
     private List<int> GetNumbers(string line)
     {
