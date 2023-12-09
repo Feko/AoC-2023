@@ -10,39 +10,55 @@ public class Test
     [Fact]
     public void Part1()
     {
-        // var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day09/sample.txt");
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day09/input.txt");
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day09/sample.txt");
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day09/input.txt");
         long result = lines.Select(l => PredictNext(l)).Sum();
         Assert.Equal(114, result);
     }
 
+    [Fact]
+    public void Part2()
+    {
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day09/sample.txt");
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day09/input.txt");
+        long result = lines.Select(l => PredictFirst(l)).Sum();
+        Assert.Equal(2, result);
+    }
+
     private int PredictNext(string line)
+    {
+        List<List<int>> allSequences = GenerateSequences(line);
+
+        for(int i = allSequences.Count() -2; i>=0; i--)
+            allSequences[i].Add( allSequences[i+1].Last() + allSequences[i].Last());
+
+        return allSequences.First().Last();
+    }
+
+    private int PredictFirst(string line)
+    {
+        List<List<int>> allSequences = GenerateSequences(line);
+        allSequences.ForEach(list => list.Reverse());
+
+        for(int i = allSequences.Count() -2; i>=0; i--)
+            allSequences[i].Add(allSequences[i].Last() - allSequences[i+1].Last());
+
+        return allSequences.First().Last();
+    }
+
+    private List<List<int>> GenerateSequences(string line)
     {
         List<List<int>> allSequences = new();
         var numbers = GetNumbers(line);
         allSequences.Add(numbers);
 
         do{
-            numbers = numbers.Zip(numbers.Skip(1), (left, right) => GetDiff(left, right)).ToList();
+            numbers = numbers.Zip(numbers.Skip(1), (left, right) => right - left).ToList();
             allSequences.Add(numbers);
 
         }while(numbers.Any(n => n != 0));
-
-        for(int i = allSequences.Count() -2; i>=0; i--)
-        {
-            allSequences[i].Add( allSequences[i+1].Last() + allSequences[i].Last());
-        }
-
-        return allSequences.First().Last();
+        return allSequences;
     }
-
-    private int GetDiff(int left, int right)
-        // => Math.Abs(right) - Math.Abs(left);
-        // => Math.Abs(Math.Abs(right) - Math.Abs(left));
-        // => left < 0 && right < 0 ? Math.Abs(right) - Math.Abs(left) : right - left;
-        // => left < 0 || right < 0 ? Math.Abs(right) - Math.Abs(left) : right - left;
-        // => Math.Abs(left < 0 || right < 0 ? Math.Abs(right) - Math.Abs(left) : right - left);
-        => right - left;
 
     private List<int> GetNumbers(string line)
     {
