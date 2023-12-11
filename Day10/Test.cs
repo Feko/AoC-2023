@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace AOC2023.Day10;
@@ -17,11 +18,13 @@ public class Test
     {
         public (int line, int column) DirectionA;
         public (int line, int column) DirectionB;
-        private char _type;
+        public char _type {get;set;}
+        public (int line, int column) Position;
 
         public Pipe((int line, int column) pos, char type)
         {
             _type = type;
+            Position = pos;
             DirectionA = type switch {
               '|' => Directions.North(pos),
               '-' => Directions.East(pos),
@@ -46,33 +49,86 @@ public class Test
         }
     }
 
-    Regex _numbersRegExp = new Regex(@"-?[0-9]+", RegexOptions.Compiled); 
-
     [Fact]
     public void Part1()
     {
         //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day10/input.txt"); char startType = '-';
         var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day10/sample.txt"); char startType = 'F';
         var pipeMesh = Parse(lines, startType, out var startPosition);
-        int result = FindCyleLength(pipeMesh, startPosition);
+        int result = FindCylePath(pipeMesh, startPosition).Count();
         Assert.Equal(8, result/2);
     }
 
-    private int FindCyleLength(Dictionary<(int line, int column), Pipe> pipeMesh, (int line, int column) startPosition)
+    [Fact]
+    public void Part2()
     {
-        int size = 1;
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day10/input.txt"); char startType = '-'; int expect = 1;
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day10/sample2.txt"); char startType = 'F'; int expect = 8;
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day10/sample3.txt"); char startType = '7'; int expect = 10;
+        var pipeMesh = Parse(lines, startType, out var startPosition);
+        int result = CountPiecesInsideLoop2(pipeMesh, startPosition);
+        Assert.Equal(expect, result);
+    }
+
+    private List<(int line, int column)> FindCylePath(Dictionary<(int line, int column), Pipe> pipeMesh, (int line, int column) startPosition)
+    {
+        List<(int line, int column)> loopPositions = new(10_000);
+        loopPositions.Add(startPosition);
+
         var current = startPosition;
         var next = pipeMesh[startPosition].DirectionA;
         while(next != startPosition)
         {
+            loopPositions.Add(next);            
             var temp = pipeMesh[next].DirectionA == current ? pipeMesh[next].DirectionB : pipeMesh[next].DirectionA; 
             current = next;
             next = temp;
-            size++;
         }
 
-        return size;
+        return loopPositions;
     }
+
+    private int CountPiecesInsideLoop2(Dictionary<(int line, int column), Pipe> pipeMesh, (int line, int column) startPosition)
+    {
+        // https://en.wikipedia.org/wiki/Even%E2%80%93odd_rule
+        // |, FJ, L7
+        int amount = 0;
+        var loopPositions = FindCylePath(pipeMesh, startPosition);
+        int height = loopPositions.Max(x => x.line);
+        int width = loopPositions.Max(x => x.column);
+
+        // Build a map with only the loop tiles
+        List<string> map = new(height+1);
+        for(int line = 0; line < height; line++)
+        {
+            var sb = new StringBuilder();
+            for(int column = 0; column < width; column++)
+            {
+                char current = loopPositions.Contains((line,column)) ? pipeMesh[(line,column)]._type : ' ';
+                sb.Append(current);
+            }
+            map.Add(sb.ToString());
+        }
+
+        Regex strokesRegEx = new Regex(@"(\||F-*J|L-*7)", RegexOptions.Compiled); 
+
+        for(int line = 0; line < height; line++)
+        {
+            for(int column = 1; column < width; column++)
+            {
+                if(loopPositions.Contains((line,column)))
+                    continue;
+                
+                var trailing = map[line].Substring(0, column);
+                var strokes = strokesRegEx.Matches(trailing);
+                if(strokes.Count % 2 == 1)
+                    amount++;
+            }
+        }
+
+        return amount;
+    }
+
 
     private Dictionary<(int line, int column), Pipe> Parse(string[] input, char startType, out (int line, int column) startPosition)
     {
