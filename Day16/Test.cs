@@ -68,25 +68,47 @@ public class Test
     {
         // 5935 = Too low
         // 7034 = Bingo
-        var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day16/input.txt").Select(l => l.ToCharArray()).ToArray();
-        // var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day16/sample.txt").Select(l => l.ToCharArray()).ToArray();
-        var path = GetEnergizedPath(array);
+        //var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day16/input.txt").Select(l => l.ToCharArray()).ToArray();
+        var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day16/sample.txt").Select(l => l.ToCharArray()).ToArray();
+        var path = GetEnergizedPath(array, (0, -1), Direction.Right);
         Assert.Equal(46, path.Count);
     }
 
-    private HashSet<(int,int)> GetEnergizedPath(char[][] array)
+    [Fact]
+    public void Part2()
+    {
+        //var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day16/input.txt").Select(l => l.ToCharArray()).ToArray();
+        var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day16/sample.txt").Select(l => l.ToCharArray()).ToArray();
+        var maxEnergize = TryAllPossibilities(array);
+        Assert.Equal(51, maxEnergize);
+    }
+
+    private int TryAllPossibilities(char[][] array)
+    {
+        List<int> result = new(array.Length * 4);
+        for(int i =0; i < array.Length; i++)
+        {
+            result.Add(GetEnergizedPath(array, (i, -1), Direction.Right).Count);
+            result.Add(GetEnergizedPath(array, (-1, i), Direction.Down).Count);
+            result.Add(GetEnergizedPath(array, (i, array.Length), Direction.Left).Count);
+            result.Add(GetEnergizedPath(array, (array.Length, i), Direction.Up).Count);
+
+        }
+        return result.Max();
+    }
+
+    private HashSet<(int,int)> GetEnergizedPath(char[][] array, (int Row, int Column) startPosition, Direction startDirection)
     {
         var path = new HashSet<(int,int)>();
-        (int Row, int Column) startPosition = (0, -1);
         (int NumRows, int NumColumns) roomSize = (array.Length, array[0].Length);
 
-        Beam firstBeam = new(Direction.Right, startPosition);
+        Beam firstBeam = new(startDirection, startPosition);
         var queue = new Queue<Beam>();
         queue.Enqueue(firstBeam);
 
         // The beams enter a loop, so it's neverending spliting.
         // I'm circunventing it by adding a threshold: If the path doesn't change after X cycles, it's a loop and we're out of the loop
-        (int thresold, int lastPathLength, int countPathUnchanged) = (10_000_000, 0, 0);
+        (int lastPathLength, int countPathUnchanged) = (0, 0);
 
         while(queue.Any() && countPathUnchanged < (queue.Count * 5))
         {
