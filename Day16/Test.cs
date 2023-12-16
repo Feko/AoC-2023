@@ -96,32 +96,29 @@ public class Test
     private HashSet<(int,int)> GetEnergizedPath(char[][] array, (int Row, int Column) startPosition, Direction startDirection)
     {
         var path = new HashSet<(int,int)>();
+        var visited = new HashSet<(int,int, Direction)>();
         (int NumRows, int NumColumns) roomSize = (array.Length, array[0].Length);
 
         Beam firstBeam = new(startDirection, startPosition);
         var queue = new Queue<Beam>();
         queue.Enqueue(firstBeam);
 
-        // The beams enter a loop, so it's neverending spliting.
-        // I'm circunventing it by adding a threshold: If the path doesn't change after X cycles, it's a loop and we're done
-        (int lastPathLength, int countPathUnchanged) = (0, 0);
-
-        while(queue.Any() && countPathUnchanged < (queue.Count * 5))
+        while(queue.Any())
         {
             var beam = queue.Dequeue();
             beam.Move();
             if(IsOutbounds(beam.Position, roomSize))
                 continue;
             
+            if(visited.Contains((beam.Position.Row, beam.Position.Column, beam.Direction)))
+                continue;
+            visited.Add((beam.Position.Row, beam.Position.Column, beam.Direction));
+
             path.Add(beam.Position);
             var splitted = beam.HandlePiece(array[beam.Position.Row][beam.Position.Column]);
             if(splitted != null)
                 queue.Enqueue(splitted);
             queue.Enqueue(beam);
-
-            // Handle loop
-            countPathUnchanged = path.Count == lastPathLength ? countPathUnchanged + 1 : 0;
-            lastPathLength = path.Count;
         }
 
         return path;
