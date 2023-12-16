@@ -1,7 +1,3 @@
-
-
-using System.ComponentModel;
-
 namespace AOC2023.Day16;
 
 public class Test
@@ -107,7 +103,7 @@ public class Test
         queue.Enqueue(firstBeam);
 
         // The beams enter a loop, so it's neverending spliting.
-        // I'm circunventing it by adding a threshold: If the path doesn't change after X cycles, it's a loop and we're out of the loop
+        // I'm circunventing it by adding a threshold: If the path doesn't change after X cycles, it's a loop and we're done
         (int lastPathLength, int countPathUnchanged) = (0, 0);
 
         while(queue.Any() && countPathUnchanged < (queue.Count * 5))
@@ -124,13 +120,8 @@ public class Test
             queue.Enqueue(beam);
 
             // Handle loop
-            if(path.Count == lastPathLength)
-                countPathUnchanged++;
-            else
-            {
-                lastPathLength = path.Count;
-                countPathUnchanged = 0;
-            }
+            countPathUnchanged = path.Count == lastPathLength ? countPathUnchanged + 1 : 0;
+            lastPathLength = path.Count;
         }
 
         return path;
