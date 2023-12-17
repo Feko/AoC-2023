@@ -22,55 +22,58 @@ public class Test
     public int SolveMinimumHeatLoss(int[][] array)
     {
         // From (0,0) try start going right
-        int resultA = SolveMinimumHeatLoss(array, accumulatedHeat: 0, stepsInThisDirection: 1, Direction.Right, (0,0), new(), new());
+        int resultA = SolveMinimumHeatLoss(array, Direction.Right, (0,0));
 
         // Now try going down
-        int resultB = SolveMinimumHeatLoss(array, accumulatedHeat: 0, stepsInThisDirection: 1, Direction.Down, (0,0), new(), new());
+        int resultB = SolveMinimumHeatLoss(array, Direction.Down, (0,0));
 
         return Math.Min(resultA, resultB);
     }
 
-    public int SolveMinimumHeatLoss(int[][] array, int accumulatedHeat, int stepsInThisDirection, Direction direction, 
-        (int row, int col) position, Stack<(int,int)> thisPath, Dictionary<(int,int, int, Direction), int> memo )
+    public int SolveMinimumHeatLoss(int[][] array, Direction direction,  (int row, int col) position)
     {
-        if(IsOutbounds(position, array)) // Is this position outbounds?
-            return int.MaxValue;
+        PriorityQueue<((int row, int col) position, Direction direction, int accumulatedHeat, int stepsInThisDirection), int> queue = new();
+        HashSet<(int,int,int,int,Direction)> memo = new();
+        // HashSet<(int,int,int,Direction)> memo = new();
+        queue.Enqueue((position, direction, 0, 1), 0);
 
-        if(thisPath.Contains(position)) // Are we in a loop?
-            return int.MaxValue;
-
-        (int,int, int, Direction) key = (position.row, position.col, stepsInThisDirection, direction);
-        //if(memo.ContainsKey(key)) // Have we already hit this position
-        //    return memo[key];
-
-        accumulatedHeat += array[position.row][position.col];
-        if(array.Length -1 == position.row && array[0].Length -1 == position.col) // Is this the desired location?
-            return accumulatedHeat;
-
-        int min = int.MaxValue;
-        thisPath.Push(position);
-
-        int result = 0;
-        Direction nextDirection = direction;
-        if(stepsInThisDirection < 3) // Can I still go in this direction?
+        int minHeat = int.MaxValue;
+        while(queue.Count > 0)
         {
-            result = SolveMinimumHeatLoss(array, accumulatedHeat, stepsInThisDirection + 1, direction, GetNextPosition(position, direction), thisPath, memo);
-            min = Math.Min(min, result);
+            var current = queue.Dequeue();
+
+            if(IsOutbounds(current.position, array))
+                continue;
+
+            if(array.Length -1 == current.position.row && array[0].Length -1 == current.position.col)
+            {
+                minHeat = current.accumulatedHeat + array[current.position.row][current.position.col];
+                break;
+            }
+
+            var key = (current.position.row, current.position.col, current.stepsInThisDirection, current.accumulatedHeat, current.direction);
+            //var key = (current.position.row, current.position.col, current.stepsInThisDirection, current.direction);
+            if(memo.Contains(key))
+                continue;
+            memo.Add(key);
+
+            int heat = current.accumulatedHeat + array[current.position.row][current.position.col];
+            if(current.stepsInThisDirection < 3)
+            {
+                var next = (GetNextPosition(current.position, current.direction), current.direction, heat, current.stepsInThisDirection + 1);
+                queue.Enqueue(next, heat);
+            }
+
+            var nextDirectionClockwise = GetClockwise(current.direction);
+            var nextClockwise = (GetNextPosition(current.position, nextDirectionClockwise), nextDirectionClockwise, heat, 1);
+            queue.Enqueue(nextClockwise, heat);
+
+            var nextDirectionAntiClockwise = GetAntiClockwise(current.direction);
+            var nextAntiClockwise = (GetNextPosition(current.position, nextDirectionAntiClockwise), nextDirectionAntiClockwise, heat, 1);
+            queue.Enqueue(nextAntiClockwise, heat);
         }
 
-        // Try going clockwise
-        nextDirection = GetClockwise(direction);
-        result = SolveMinimumHeatLoss(array, accumulatedHeat, 1, nextDirection, GetNextPosition(position, nextDirection), thisPath, memo);
-        min = Math.Min(min, result);
-        
-        // Try going anti-clockwise
-        nextDirection = GetAntiClockwise(direction);
-        result = SolveMinimumHeatLoss(array, accumulatedHeat, 1, nextDirection, GetNextPosition(position, nextDirection), thisPath, memo);
-        min = Math.Min(min, result);
-
-        thisPath.Pop();
-        memo[key] = min;
-        return min;
+        return minHeat;
     }
 
     private Direction GetClockwise(Direction d) => (Direction)((((int)d) + 3) % 4);
