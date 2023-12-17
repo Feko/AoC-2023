@@ -13,7 +13,9 @@ public class Test
     [Fact]
     public void Part1()
     {
-        var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day17/sample.txt")
+        // 1048 as result... I'm off with the first item, somehow. So 1044 is my answer.
+        var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day17/input.txt")
+        //var array = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day17/sample.txt")
             .Select(l => l.ToCharArray().Select(c => c - '0').ToArray()).ToArray();
         var heatLoss = SolveMinimumHeatLoss(array);
         Assert.Equal(102, heatLoss);
@@ -33,8 +35,8 @@ public class Test
     public int SolveMinimumHeatLoss(int[][] array, Direction direction,  (int row, int col) position)
     {
         PriorityQueue<((int row, int col) position, Direction direction, int accumulatedHeat, int stepsInThisDirection), int> queue = new();
-        HashSet<(int,int,int,int,Direction)> memo = new();
-        // HashSet<(int,int,int,Direction)> memo = new();
+        //HashSet<(int,int,int,int,Direction)> memo = new();
+        HashSet<(int,int,int,Direction)> memo = new();
         queue.Enqueue((position, direction, 0, 1), 0);
 
         int minHeat = int.MaxValue;
@@ -51,26 +53,38 @@ public class Test
                 break;
             }
 
-            var key = (current.position.row, current.position.col, current.stepsInThisDirection, current.accumulatedHeat, current.direction);
-            //var key = (current.position.row, current.position.col, current.stepsInThisDirection, current.direction);
+            //var key = (current.position.row, current.position.col, current.stepsInThisDirection, current.accumulatedHeat, current.direction);
+            var key = (current.position.row, current.position.col, current.stepsInThisDirection, current.direction);
             if(memo.Contains(key))
                 continue;
             memo.Add(key);
 
             int heat = current.accumulatedHeat + array[current.position.row][current.position.col];
+            List<Direction> nextDirections = new List<Direction>{ GetClockwise(current.direction), GetAntiClockwise(current.direction) };
+            // if(current.stepsInThisDirection < 3)
+            // {
+            //     var next = (GetNextPosition(current.position, current.direction), current.direction, heat, current.stepsInThisDirection + 1);
+            //     queue.Enqueue(next, heat);
+            // }
             if(current.stepsInThisDirection < 3)
+                nextDirections.Add(current.direction);
+            foreach(var nextDirection in nextDirections)
             {
-                var next = (GetNextPosition(current.position, current.direction), current.direction, heat, current.stepsInThisDirection + 1);
-                queue.Enqueue(next, heat);
+                var next = (GetNextPosition(current.position, nextDirection), nextDirection, heat, nextDirection == current.direction ? current.stepsInThisDirection + 1 : 1);
+                if(!IsOutbounds(next.Item1, array))
+                {
+                    var thisHeat = heat + array[next.Item1.Item1][next.Item1.Item2];
+                    queue.Enqueue(next, thisHeat); 
+                }
             }
 
-            var nextDirectionClockwise = GetClockwise(current.direction);
-            var nextClockwise = (GetNextPosition(current.position, nextDirectionClockwise), nextDirectionClockwise, heat, 1);
-            queue.Enqueue(nextClockwise, heat);
+            // var nextDirectionClockwise = GetClockwise(current.direction);
+            // var nextClockwise = (GetNextPosition(current.position, nextDirectionClockwise), nextDirectionClockwise, heat, 1);
+            // queue.Enqueue(nextClockwise, heat);
 
-            var nextDirectionAntiClockwise = GetAntiClockwise(current.direction);
-            var nextAntiClockwise = (GetNextPosition(current.position, nextDirectionAntiClockwise), nextDirectionAntiClockwise, heat, 1);
-            queue.Enqueue(nextAntiClockwise, heat);
+            // var nextDirectionAntiClockwise = GetAntiClockwise(current.direction);
+            // var nextAntiClockwise = (GetNextPosition(current.position, nextDirectionAntiClockwise), nextDirectionAntiClockwise, heat, 1);
+            // queue.Enqueue(nextAntiClockwise, heat);
         }
 
         return minHeat;
