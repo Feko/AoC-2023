@@ -14,6 +14,7 @@ public class Test
         public Queue<Signal> Queue = new();
         public Dictionary<string, Module> Modules = new();
         private Button Button;
+        public Action<Signal> RxCallback = null;
 
         public void PushButton() => Button.Send();
 
@@ -69,7 +70,14 @@ public class Test
             {
                 var signal = Queue.Dequeue();
                 if (!Modules.ContainsKey(signal.To))
+                {
+                    if (RxCallback is not null)
+                    { 
+                        RxCallback(signal);
+                    }
                     continue;
+                }
+                    
 
                 Modules[signal.To].Receive(signal);
             }
@@ -178,6 +186,39 @@ public class Test
         var context = new MeshContext();
         PushButton(context, lines, 1000);
         Assert.Equal(expected, context.FactorSignals());
+    }
+
+    [Fact]
+    public void Part2()
+    {
+        var lines = File.ReadAllLines("C:\\DEV\\AoC-2023\\Day20\\input.txt").ToList(); 
+        var context = new MeshContext();
+        long result = PushButtonWithCallback(context, lines);
+        Assert.Equal(1, result);
+    }
+
+    private long PushButtonWithCallback(MeshContext context, List<string> lines)
+    {
+        context.Initialize(lines);
+        bool shouldContinue = true;
+        long pushAmount = 0;
+
+        context.RxCallback = signal => 
+        {
+            if (signal.To == "rx" && signal.Strength == SignalStrength.Low)
+            {
+                shouldContinue = false;
+            }
+        };
+
+        while (shouldContinue)
+        {
+            context.PushButton();
+            context.ProcessSignals();
+            pushAmount++;
+        }
+
+        return pushAmount;
     }
 
     private void PushButton(MeshContext context, List<string> lines, int amount)
