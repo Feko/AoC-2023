@@ -14,7 +14,7 @@ public class Test
         public Queue<Signal> Queue = new();
         public Dictionary<string, Module> Modules = new();
         private Button Button;
-        public Action<Signal> RxCallback = null;
+        public Dictionary<string, Action<Signal>> ProcessSendCallback = new();
 
         public void PushButton() => Button.Send();
 
@@ -69,21 +69,18 @@ public class Test
             while (Queue.Any())
             {
                 var signal = Queue.Dequeue();
+                if (ProcessSendCallback.ContainsKey(signal.From))
+                    ProcessSendCallback[signal.From](signal);
+
                 if (!Modules.ContainsKey(signal.To))
-                {
-                    if (RxCallback is not null)
-                    { 
-                        RxCallback(signal);
-                    }
                     continue;
-                }
-                    
 
                 Modules[signal.To].Receive(signal);
             }
         }
 
         public long FactorSignals() => CountHigh * CountLow;
+        public Module GetModule(string name) => Modules[name];
     }
 
     public abstract class Module
@@ -136,7 +133,7 @@ public class Test
 
     public class Conjunction : Module
     {
-        private Dictionary<string, SignalStrength> memo = new();
+        public Dictionary<string, SignalStrength> Memo = new();
         public Conjunction(string line) : base(line)
         {
         }
@@ -144,14 +141,14 @@ public class Test
         public void InitializeMemo(List<string> connected)
         {
             foreach(var module in connected)
-                memo[module] = SignalStrength.Low;
+                Memo[module] = SignalStrength.Low;
         }
 
         public override void Receive(Signal signal)
         {
-            memo[signal.From] = signal.Strength;
+            Memo[signal.From] = signal.Strength;
 
-            SignalStrength s = memo.Values.All(x => x == SignalStrength.High) 
+            SignalStrength s = Memo.Values.All(x => x == SignalStrength.High) 
                 ? SignalStrength.Low : SignalStrength.High;
 
             Send(s);
@@ -194,31 +191,56 @@ public class Test
         var lines = File.ReadAllLines("C:\\DEV\\AoC-2023\\Day20\\input.txt").ToList(); 
         var context = new MeshContext();
         long result = PushButtonWithCallback(context, lines);
-        Assert.Equal(1, result);
+        Assert.Equal(231657829136023, result);
     }
 
     private long PushButtonWithCallback(MeshContext context, List<string> lines)
     {
+        // Brute-forced for 5 hours, up to 3B with no luck
+        // Inspecting my visual aid, I can see that it will only receive a low pulse if all the Conjunction above of "lg" output HIGH simultaneously.
+        // Let's try something else
+
         context.Initialize(lines);
-        bool shouldContinue = true;
-        long pushAmount = 0;
+        int pushAmount = 0;
 
-        context.RxCallback = signal => 
+        // Get module name above RX
+        var moduleName = lines.First(l => l.IndexOf(" -> rx") > 0).Split(" -> ")[0].Substring(1);
+
+        // What we really need is the modules ABOVE the one above RX ("vc", "nb", "ls" and "vg" in my case)
+        var aboveRx = (context.GetModule(moduleName) as Conjunction);
+        var conjunctionKeys = aboveRx.Memo.Keys.ToList();
+
+        
+        Dictionary<string, List<int>> loopConjunctions = conjunctionKeys.ToDictionary(k => k, v => new List<int>());
+
+        // Add some callbacks to find out WHEN those four modules actually send a "High" output.
+        foreach (var c in conjunctionKeys)
         {
-            if (signal.To == "rx" && signal.Strength == SignalStrength.Low)
+            context.ProcessSendCallback[c] = signal =>
             {
-                shouldContinue = false;
-            }
-        };
-
-        while (shouldContinue)
-        {
-            context.PushButton();
-            context.ProcessSignals();
-            pushAmount++;
+                if (signal.Strength == SignalStrength.High)
+                {
+                    loopConjunctions[signal.From].Add(pushAmount);
+                }
+            };
         }
 
-        return pushAmount;
+        // Let it run for a while()
+        for (int i = 0; i < 10_000; i++)
+        {
+            pushAmount++;
+            context.PushButton();
+            context.ProcessSignals();
+        }
+
+        // Factor the results - All prime numbers, so no need for LCM
+        var loopSizes = loopConjunctions.Values.Select(x => x.First()).ToList();
+
+        long result = 1;
+        foreach (var d in loopSizes)
+            result *= d;
+
+        return result;
     }
 
     private void PushButton(MeshContext context, List<string> lines, int amount)
