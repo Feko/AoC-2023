@@ -62,6 +62,20 @@ public class Test
                 (c as Conjunction).InitializeMemo(connected);
             }
         }
+
+        public void ProcessSignals()
+        {
+            while (Queue.Any())
+            {
+                var signal = Queue.Dequeue();
+                if (!Modules.ContainsKey(signal.To))
+                    continue;
+
+                Modules[signal.To].Receive(signal);
+            }
+        }
+
+        public long FactorSignals() => CountHigh * CountLow;
     }
 
     public abstract class Module
@@ -155,11 +169,24 @@ public class Test
         public void Send() => base.Send(SignalStrength.Low);
     }
 
-    // TODO: Conjunction MUST know in advance modules that send to it
     [Fact]
     public void Part1()
     {
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day20/sample.txt");
-        Assert.Equal(142, 1);
+        var lines = File.ReadAllLines("C:\\DEV\\AoC-2023\\Day20\\sample1.txt").ToList(); long expected = 32000000;
+        //var lines = File.ReadAllLines("C:\\DEV\\AoC-2023\\Day20\\sample2.txt").ToList(); long expected = 11687500;
+        //var lines = File.ReadAllLines("C:\\DEV\\AoC-2023\\Day20\\input.txt").ToList(); long expected = 11687500;
+        var context = new MeshContext();
+        PushButton(context, lines, 1000);
+        Assert.Equal(expected, context.FactorSignals());
+    }
+
+    private void PushButton(MeshContext context, List<string> lines, int amount)
+    {
+        context.Initialize(lines);
+        for (int i = 0; i < amount; i++)
+        {
+            context.PushButton();
+            context.ProcessSignals();
+        }
     }
 }
