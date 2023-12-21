@@ -15,8 +15,12 @@ public partial class TestPart2
         var lines = File.ReadAllLines("C:\\DEV\\AoC-2023\\Day21\\input.txt").Select(s => s.ToCharArray()).ToArray(); 
         MazeSize = (lines.Length, lines[0].Length);
 
+        // 625587097150084 = FREAKING FINALLY
+        // 625582802182788 = Wrong again
+        // 625582764959680 = Too low
+        // 625579767694401 = Too low
         // 625579767678813 = Too low
-
+        // 625579730455705 = even lower
 
         long result = PerformHugeAssAmountOfSteps(lines);
         Assert.Equal(1, result);
@@ -27,7 +31,7 @@ public partial class TestPart2
         HashSet<(int row, int column)> positions = new();
         (int row,int col) start = GetStartPosition(array);
         positions.Add(start);
-        int steps = MazeSize.Height * ExpandFactor;
+        int steps = (MazeSize.Height * ExpandFactor) + (FinalSteps % MazeSize.Height);
 
         // Right, this will run for a few seconds and map all the possible positions after repeating for (MAZE_SIZE * 5) steps.
         // This should consider a grid with 11 x 11 tiles
@@ -45,8 +49,8 @@ public partial class TestPart2
 
         // So we have two types of "inner" tiles, even and odd. Let's count the amount of possible positions for each one.
         // I may have swapped even/odd
-        int countOdd = CountPositionsForTile(GetTileAt(ExpandFactor, ExpandFactor), positions);
-        int countEven = CountPositionsForTile(GetTileAt(ExpandFactor, ExpandFactor + 1), positions);
+        int countEven = CountPositionsForTile(GetTileAt(ExpandFactor, ExpandFactor), positions);
+        int countOdd = CountPositionsForTile(GetTileAt(ExpandFactor, ExpandFactor + 1), positions);
 
         // We also have 4 corners, I'm counting them individually
         int cornerTop = CountPositionsForTile(GetTileAt(0, ExpandFactor), positions);
@@ -60,17 +64,17 @@ public partial class TestPart2
         int diagonalTopRight = CountPositionsForTile(GetTileAt(ExpandFactor - 1, ExpandFactor * 2 -1), positions);
         int diagonalBottomRight = CountPositionsForTile(GetTileAt(ExpandFactor + 1, ExpandFactor * 2 -1), positions);
 
-        // Just to ensure the diagonals are equal
+        // Sanity Check: Just to ensure the diagonals are equal
         int diagonalTopLeft2 = CountPositionsForTile(GetTileAt(ExpandFactor - 2, 2), positions);
         bool equal = diagonalTopLeft == diagonalTopLeft2;
 
-        // These small corners should be empty:
-        int thisShouldBeZeroA = CountPositionsForTile(GetTileAt(ExpandFactor - 1, 0), positions);
-        int thisShouldBeZeroB = CountPositionsForTile(GetTileAt(ExpandFactor - 2, 1), positions);
-        int thisShouldBeZeroC = CountPositionsForTile(GetTileAt(ExpandFactor + 1, 0), positions);
-        int thisShouldBeZeroD = CountPositionsForTile(GetTileAt(ExpandFactor + 2, 1), positions);
-        int thisShouldBeZeroE = CountPositionsForTile(GetTileAt(ExpandFactor - 1, ExpandFactor * 2), positions);
-        int thisShouldBeZeroF = CountPositionsForTile(GetTileAt(ExpandFactor - 2, ExpandFactor * 2 -1), positions);
+        // Sanity Check: These small corners should be empty:
+        // Update: These are NOT SUPPOSED to be zero. I was expanding to exact MazeSise, but the steps has additional + 65... I'm so stupid
+        int intersectionTopLeft = CountPositionsForTile(GetTileAt(ExpandFactor - 1, 0), positions); // top/left
+        int intersectionBottomLeft = CountPositionsForTile(GetTileAt(ExpandFactor + 1, 0), positions); // bottom/left
+        int intersectionBottomRight = CountPositionsForTile(GetTileAt(ExpandFactor + 1, ExpandFactor * 2), positions); // bottom/right
+        int intersectionTopRight = CountPositionsForTile(GetTileAt(ExpandFactor - 1, ExpandFactor * 2), positions); // top/right
+
 
         // OK, now to some calculations
         int totalWidth = FinalSteps / MazeSize.Width - 1;
@@ -79,11 +83,14 @@ public partial class TestPart2
         double totalEven = Math.Pow(((totalWidth + 1) / 2 * 2), 2);
         long totalEvenTiles = Convert.ToInt64(totalEven);
 
+        long odds = (totalOddTiles * countOdd);
+        long evens = (totalEvenTiles * countEven);
+        long corners = (cornerBottom + cornerTop + cornerLeft + cornerRight);
+        long diagonals = diagonalTopLeft + diagonalBottomLeft + diagonalTopRight + diagonalBottomRight;
+        diagonals = diagonals * totalWidth;
+        long intersections = ((totalWidth + 1) * (intersectionTopLeft + intersectionBottomLeft + intersectionBottomRight + intersectionTopRight));
 
-        return (totalOddTiles * countOdd)
-             + (totalEvenTiles * countEven)
-             + (cornerBottom + cornerTop + cornerLeft + cornerRight)
-             + ( totalWidth * (diagonalTopLeft + diagonalBottomLeft + diagonalTopRight + diagonalBottomRight));
+        return odds + evens + corners + diagonals + intersections;
     }
 
     private int CountPositionsForTile(TileCoords tileCoords, HashSet<(int row, int column)> positions)
