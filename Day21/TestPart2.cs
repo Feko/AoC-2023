@@ -15,17 +15,14 @@ public partial class TestPart2
         var lines = File.ReadAllLines("C:\\DEV\\AoC-2023\\Day21\\input.txt").Select(s => s.ToCharArray()).ToArray(); 
         MazeSize = (lines.Length, lines[0].Length);
 
-        // Some tests
-        var tileA = GetTileAt(0, 0);
-        var tileB = GetTileAt(0, 5);
-        var tileC = GetTileAt(5, 5);
-        var tileD = GetTileAt(6, 6);
+        // 625579767678813 = Too low
 
-        int result = PerformHugeAssAmountOfSteps(lines);
+
+        long result = PerformHugeAssAmountOfSteps(lines);
         Assert.Equal(1, result);
     }
 
-    private int PerformHugeAssAmountOfSteps(char[][] array)
+    private long PerformHugeAssAmountOfSteps(char[][] array)
     {
         HashSet<(int row, int column)> positions = new();
         (int row,int col) start = GetStartPosition(array);
@@ -47,6 +44,7 @@ public partial class TestPart2
         }
 
         // So we have two types of "inner" tiles, even and odd. Let's count the amount of possible positions for each one.
+        // I may have swapped even/odd
         int countOdd = CountPositionsForTile(GetTileAt(ExpandFactor, ExpandFactor), positions);
         int countEven = CountPositionsForTile(GetTileAt(ExpandFactor, ExpandFactor + 1), positions);
 
@@ -66,8 +64,26 @@ public partial class TestPart2
         int diagonalTopLeft2 = CountPositionsForTile(GetTileAt(ExpandFactor - 2, 2), positions);
         bool equal = diagonalTopLeft == diagonalTopLeft2;
 
+        // These small corners should be empty:
+        int thisShouldBeZeroA = CountPositionsForTile(GetTileAt(ExpandFactor - 1, 0), positions);
+        int thisShouldBeZeroB = CountPositionsForTile(GetTileAt(ExpandFactor - 2, 1), positions);
+        int thisShouldBeZeroC = CountPositionsForTile(GetTileAt(ExpandFactor + 1, 0), positions);
+        int thisShouldBeZeroD = CountPositionsForTile(GetTileAt(ExpandFactor + 2, 1), positions);
+        int thisShouldBeZeroE = CountPositionsForTile(GetTileAt(ExpandFactor - 1, ExpandFactor * 2), positions);
+        int thisShouldBeZeroF = CountPositionsForTile(GetTileAt(ExpandFactor - 2, ExpandFactor * 2 -1), positions);
 
-        return positions.Count;
+        // OK, now to some calculations
+        int totalWidth = FinalSteps / MazeSize.Width - 1;
+        double totalOdd = Math.Pow((totalWidth / 2 * 2 + 1), 2);
+        long totalOddTiles = Convert.ToInt64(totalOdd);
+        double totalEven = Math.Pow(((totalWidth + 1) / 2 * 2), 2);
+        long totalEvenTiles = Convert.ToInt64(totalEven);
+
+
+        return (totalOddTiles * countOdd)
+             + (totalEvenTiles * countEven)
+             + (cornerBottom + cornerTop + cornerLeft + cornerRight)
+             + ( totalWidth * (diagonalTopLeft + diagonalBottomLeft + diagonalTopRight + diagonalBottomRight));
     }
 
     private int CountPositionsForTile(TileCoords tileCoords, HashSet<(int row, int column)> positions)
