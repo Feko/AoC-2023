@@ -24,6 +24,8 @@ public record Position(int X, int Y, int Z)
             _ => throw new Exception("No 4D available")
         };
     }
+
+    public Position Lower() => new Position(X, Y, Z-1);
 };
 
 public enum BrickDirection 
@@ -55,10 +57,13 @@ public class Brick
         if(MinAxis(BrickDirection.ZStretch) == 1) //Already on the ground
             return false;
         
-        if(otherBricks.Any(b => b.Supports(this))) // Can't go down, there's a brick below
+        int thisZ = MinAxis(BrickDirection.ZStretch);
+        if(otherBricks.Any(b => b.MaxAxis(BrickDirection.ZStretch) == thisZ -1 && b.Supports(this))) // Can't go down, there's a brick below
             return false;
         
         Area = GetLoweringArea();
+        StartPosition = StartPosition.Lower();
+        EndPosition = EndPosition.Lower();
         return true;
     }
 

@@ -5,8 +5,8 @@ public class Test
     [Fact]
     public void Part1()
     {
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day22/input.txt");
-        // var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day22/sample.txt");
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day22/input.txt"); int expected = 416;
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day22/sample.txt"); int expected = 5;
         
         List<Brick> bricks = BuildBricks(lines);
         BringDownThemBricks(bricks);
