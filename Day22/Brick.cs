@@ -88,3 +88,27 @@ public class Brick
         return new Position(ints[0], ints[1], ints[2]);
     }
 }
+
+
+public partial class BrickTests
+{
+    [Fact]
+    public void Supports_WhenTheresBrickAbove_ShouldBeTrue()
+    {
+        var brickC = new Brick("0,2,3~2,2,3");
+        var brickD = new Brick("0,0,4~0,2,4");
+        
+        bool result = brickC.Supports(brickD);
+        Assert.True(result);
+    }
+
+    [Fact]
+    public void Supports_WhenBricksAreNotExactlyOnTopOfEachOther_ShouldBeFalse()
+    {
+        var brickC = new Brick("0,2,3~2,2,3");
+        var brickB = new Brick("0,0,2~2,0,2");
+        
+        bool result = brickB.Supports(brickC);
+        Assert.False(result);
+    }
+}
