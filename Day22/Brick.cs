@@ -50,8 +50,20 @@ public class Brick
         CalculateArea();
     }
 
+    public bool GoDown(List<Brick> otherBricks)
+    {
+        if(MinAxis(BrickDirection.ZStretch) == 1) //Already on the ground
+            return false;
+        
+        if(otherBricks.Any(b => b.Supports(this))) // Can't go down, there's a brick below
+            return false;
+        
+        Area = GetLoweringArea();
+        return true;
+    }
+
     // Returns TRUE if this brick supports another brick
-    public bool Supports(Brick anotherBrick) => anotherBrick.GetLoweringArea().Intersect(Area).Any(); 
+    public bool Supports(Brick anotherBrick) => anotherBrick != this && anotherBrick.GetLoweringArea().Intersect(Area).Any(); 
     
     private List<(int,int,int)> GetLoweringArea() => Area.Select(point => (point.x, point.y, point.z -1)).ToList();
 
@@ -79,7 +91,7 @@ public class Brick
         return BrickDirection.Unitary;
     }
 
-    private int MinAxis(BrickDirection direction) => Math.Min(StartPosition.GetAxis(direction), EndPosition.GetAxis(direction));
+    public int MinAxis(BrickDirection direction) => Math.Min(StartPosition.GetAxis(direction), EndPosition.GetAxis(direction));
     private int MaxAxis(BrickDirection direction) => Math.Max(StartPosition.GetAxis(direction), EndPosition.GetAxis(direction));
 
     public Position ParsePosition(string pos)
@@ -109,6 +121,15 @@ public partial class BrickTests
         var brickB = new Brick("0,0,2~2,0,2");
         
         bool result = brickB.Supports(brickC);
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void Supports_BrickCantSupportItself()
+    {
+        var brick = new Brick("0,0,2~0,0,4");
+        
+        bool result = brick.Supports(brick);
         Assert.False(result);
     }
 }
