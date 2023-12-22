@@ -1,3 +1,4 @@
+
 namespace AOC2023.Day22;
 
 public class Test
@@ -14,7 +15,41 @@ public class Test
 
         int amount = CountBricksForElimination(dataset);
 
-        Assert.Equal(114, amount);
+        Assert.Equal(expected, amount);
+    }
+
+    [Fact]
+    public void Part2()
+    {
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day22/input.txt"); int expected = 416;
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day22/sample.txt"); int expected = 7;
+        
+        List<Brick> bricks = BuildBricks(lines);
+        BringDownThemBricks(bricks);
+
+        long amount = CountChainReactionElimination(bricks);
+
+        Assert.Equal(expected, amount);
+    }
+
+    private long CountChainReactionElimination(List<Brick> bricks)
+    {
+        bricks = bricks.OrderBy(x => x.MinAxis(BrickDirection.ZStretch)).ToList();
+        long total = 0;
+        foreach(var eliminated in bricks)
+        {
+            var remaining = bricks.Where(b => b != eliminated)
+                .Select(b => b.Clone()).OrderBy(x => x.MinAxis(BrickDirection.ZStretch)).ToList();
+
+            foreach(var brick in remaining)
+            {
+                bool wentDown = brick.GoDown(remaining);
+                if(wentDown)
+                    total++;
+            }
+
+        }
+        return total;
     }
 
     private int CountBricksForElimination(Dictionary<Brick, (List<Brick> supportedBy, List<Brick> supports)> dataset)

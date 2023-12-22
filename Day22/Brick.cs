@@ -51,6 +51,7 @@ public class Brick
         Direction = GetDirection();
         CalculateArea();
     }
+    private Brick(){}
 
     public bool GoDown(List<Brick> otherBricks)
     {
@@ -65,6 +66,17 @@ public class Brick
         StartPosition = StartPosition.Lower();
         EndPosition = EndPosition.Lower();
         return true;
+    }
+
+    public Brick Clone()
+    {
+        return new Brick()
+        {
+            StartPosition = this.StartPosition with {},
+            EndPosition = this.EndPosition with {},
+            Direction = this.Direction,
+            Area = this.Area.Select(x => x).ToList()
+        };
     }
 
     // Returns TRUE if this brick supports another brick
