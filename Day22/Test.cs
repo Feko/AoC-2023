@@ -34,12 +34,12 @@ public class Test
 
     private long CountChainReactionElimination(List<Brick> bricks)
     {
-        bricks = bricks.OrderBy(x => x.MinAxis(BrickDirection.ZStretch)).ToList();
+        bricks = bricks.OrderBy(x => x.MinAxis(Axis.ZStretch)).ToList();
         long total = 0;
         foreach(var eliminated in bricks)
         {
             var remaining = bricks.Where(b => b != eliminated)
-                .Select(b => b.Clone()).OrderBy(x => x.MinAxis(BrickDirection.ZStretch)).ToList();
+                .Select(b => b.Clone()).OrderBy(x => x.MinAxis(Axis.ZStretch)).ToList();
 
             foreach(var brick in remaining)
             {
@@ -90,7 +90,7 @@ public class Test
         while(shouldContinue)
         {
             shouldContinue = false;
-            var sortedBricks = bricks.OrderBy(x => x.MinAxis(BrickDirection.ZStretch)).ToList();
+            var sortedBricks = bricks.OrderBy(x => x.MinAxis(Axis.ZStretch)).ToList();
             foreach(var brick in sortedBricks)
             {
                 bool wentDown = brick.GoDown(bricks);

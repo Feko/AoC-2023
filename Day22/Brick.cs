@@ -3,32 +3,37 @@ namespace AOC2023.Day22;
 public record Position(int X, int Y, int Z)
 {
     public (int X, int Y, int Z) AsTuple() => (X, Y, Z);
-    public Position ModifyAxis(BrickDirection direction, int newValue)
+    public Position ModifyAxis(Axis direction, int newValue)
     {
         return direction switch
         {
-            BrickDirection.XStretch => new Position(newValue, Y, Z),
-            BrickDirection.YStretch => new Position(X, newValue, Z),
-            BrickDirection.ZStretch => new Position(X, Y, newValue),
+            Axis.XStretch => new Position(newValue, Y, Z),
+            Axis.YStretch => new Position(X, newValue, Z),
+            Axis.ZStretch => new Position(X, Y, newValue),
             _ => throw new Exception("No 4D available")
         };
     }
 
-    public int GetAxis(BrickDirection direction)
+    public int GetAxis(Axis direction)
     {
          return direction switch
         {
-            BrickDirection.XStretch => X,
-            BrickDirection.YStretch => Y,
-            BrickDirection.ZStretch => Z,
+            Axis.XStretch => X,
+            Axis.YStretch => Y,
+            Axis.ZStretch => Z,
             _ => throw new Exception("No 4D available")
         };
     }
 
     public Position Lower() => new Position(X, Y, Z-1);
+    public static Position Parse(string pos)
+    {
+        var ints = pos.Split(',').Select(p => Convert.ToInt32(p)).ToList();
+        return new Position(ints[0], ints[1], ints[2]);
+    }
 };
 
-public enum BrickDirection 
+public enum Axis 
 {
     XStretch,
     YStretch,
@@ -40,14 +45,14 @@ public class Brick
 {
     public Position StartPosition;
     public Position EndPosition;
-    public BrickDirection Direction;
+    public Axis Direction;
     public List<(int x, int y, int z)> Area = new();
 
     public Brick(string line)
     {
         var parts = line.Split('~');
-        StartPosition = ParsePosition(parts[0]);
-        EndPosition = ParsePosition(parts[1]);
+        StartPosition = Position.Parse(parts[0]);
+        EndPosition = Position.Parse(parts[1]);
         Direction = GetDirection();
         CalculateArea();
     }
@@ -55,11 +60,11 @@ public class Brick
 
     public bool GoDown(List<Brick> otherBricks)
     {
-        if(MinAxis(BrickDirection.ZStretch) == 1) //Already on the ground
+        if(MinAxis(Axis.ZStretch) == 1) //Already on the ground
             return false;
         
-        int thisZ = MinAxis(BrickDirection.ZStretch);
-        if(otherBricks.Any(b => b.MaxAxis(BrickDirection.ZStretch) == thisZ -1 && b.Supports(this))) // Can't go down, there's a brick below
+        int thisZ = MinAxis(Axis.ZStretch);
+        if(otherBricks.Any(b => b.MaxAxis(Axis.ZStretch) == thisZ -1 && b.Supports(this))) // Can't go down, there's a brick below
             return false;
         
         Area = GetLoweringArea();
@@ -86,7 +91,7 @@ public class Brick
 
     private void CalculateArea()
     {
-        if(Direction == BrickDirection.Unitary)
+        if(Direction == Axis.Unitary)
             Area.Add(StartPosition.AsTuple());
         else
         {
@@ -95,27 +100,21 @@ public class Brick
         }
     }
 
-    private BrickDirection GetDirection()
+    private Axis GetDirection()
     {
         if(StartPosition.X != EndPosition.X)
-            return BrickDirection.XStretch;
+            return Axis.XStretch;
         
         if(StartPosition.Y != EndPosition.Y)
-            return BrickDirection.YStretch;
+            return Axis.YStretch;
         
         if(StartPosition.Z != EndPosition.Z)
-            return BrickDirection.ZStretch;
-        return BrickDirection.Unitary;
+            return Axis.ZStretch;
+        return Axis.Unitary;
     }
 
-    public int MinAxis(BrickDirection direction) => Math.Min(StartPosition.GetAxis(direction), EndPosition.GetAxis(direction));
-    private int MaxAxis(BrickDirection direction) => Math.Max(StartPosition.GetAxis(direction), EndPosition.GetAxis(direction));
-
-    public Position ParsePosition(string pos)
-    {
-        var ints = pos.Split(',').Select(p => Convert.ToInt32(p)).ToList();
-        return new Position(ints[0], ints[1], ints[2]);
-    }
+    public int MinAxis(Axis direction) => Math.Min(StartPosition.GetAxis(direction), EndPosition.GetAxis(direction));
+    private int MaxAxis(Axis direction) => Math.Max(StartPosition.GetAxis(direction), EndPosition.GetAxis(direction));
 }
 
 
