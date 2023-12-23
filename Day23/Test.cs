@@ -11,15 +11,27 @@ public class Test
     };
 
     static Dictionary<(int,int), int> Memo = new();
+    private bool FollowSlopes = true;
 
     [Fact]
     public void Part1()
     {
-        // var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/sample.txt")
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/input.txt")
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/sample.txt")
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/input.txt")
             .Select(line => line.ToCharArray()).ToArray();
         int result = FindLongestPath(lines);
         Assert.Equal(94, result);
+    }
+
+    [Fact]
+    public void Part2()
+    {
+        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/sample.txt")
+        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/input.txt")
+            .Select(line => line.ToCharArray()).ToArray();
+        FollowSlopes = false;
+        int result = FindLongestPath(lines);
+        Assert.Equal(154, result);
     }
 
     private int FindLongestPath(char[][] lines)
@@ -39,7 +51,7 @@ public class Test
             return steps;
 
         // if(Memo.ContainsKey(position))
-        //     return Memo[position];
+        //      return Memo[position] + steps;
         
         path.Push(position);
         int biggest = 1;
@@ -48,14 +60,15 @@ public class Test
         foreach(var neighbour in neighbours)
             biggest = Math.Max(biggest, FindLongestPath(array, neighbour, path, steps + 1));
 
-        //Memo[position] = biggest - steps;
+        // if(biggest > 1)
+        //     Memo[position] = biggest - steps;
         path.Pop();
         return biggest;
     }
 
     private List<(int row, int column)> GetNeighbours(char[][] array, (int row, int column) position)
     {
-        if(Slopes.ContainsKey(array[position.row][position.column])) // It's a slope, can only go one dication
+        if(FollowSlopes && Slopes.ContainsKey(array[position.row][position.column])) // It's a slope, can only go one dication
             return new(){ SumTuples(position, Slopes[array[position.row][position.column]]) };
         
         return Slopes.Values.Select(x => SumTuples(position, x)).Where(x => !IsOutbounds(x, array))
