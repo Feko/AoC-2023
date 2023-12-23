@@ -40,27 +40,24 @@ public class Test
     [Fact]
     public void Part2()
     {
-        var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/sample.txt")
-        //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/input.txt")
+        int expected = 154; var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/sample.txt")
+        //int expected = 6534; var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day23/input.txt")
             .Select(line => line.ToCharArray()).ToArray();
         FollowSlopes = false;
         TargetPosition = (lines.Length -1, lines[0].Length -2);
 
         var node = CompactGraph(lines);
         int result = FindLongestPath(node);
-        Assert.Equal(154, result);
+        Assert.Equal(expected, result);
     }
 
     private int FindLongestPath(Node node)
     {
-        return FindLongestPath(node, new(), 0) -1; //off by 1 somehow
+        return FindLongestPath(node, new(), 0);
     }
 
     private int FindLongestPath(Node node, Stack<(int,int)> path, int steps)
     {
-        if(path.Contains(node.Position)) //Not going through this path
-            return 1;
-        
         if(node.Position == TargetPosition)
             return steps;
 
@@ -83,9 +80,7 @@ public class Test
     private int FindLongestPath(char[][] lines)
     {
         (int row, int column) start = (0, 1);
-        Stack<(int, int)> path = new();
-        int result = FindLongestPath(lines, start, path, 0);
-        return result;
+        return FindLongestPath(lines, start, new(), 0);
     }
 
     private int FindLongestPath(char[][] array, (int row, int column) position, Stack<(int, int)> path, int steps)
@@ -96,11 +91,10 @@ public class Test
         if(position == (array.Length -1, array[0].Length -2)) // Found it
             return steps;
 
-        var previous = path.Peek();
         path.Push(position);
         int biggest = 1;
 
-        List<(int row, int column)> neighbours = GetNeighbours(array, position, previous);
+        List<(int row, int column)> neighbours = GetNeighbours(array, position, (-1, -1));
         foreach(var neighbour in neighbours)
             biggest = Math.Max(biggest, FindLongestPath(array, neighbour, path, steps + 1));
 
@@ -113,15 +107,12 @@ public class Test
     {
         List<Node> allNodes = new();
         (int row, int column) startPosition = (0,1);
-        (int row, int column) nextStep = (0,1);
-        (int row, int column) targetPosition = (array.Length -1, array[0].Length -2);
+        (int row, int column) nextStep = (1,1);
         Node startNode = new(){Position = startPosition};
         allNodes.Add(startNode);
 
         Queue<(Node node, (int row, int column) nextPosition)> queue = new();
         queue.Enqueue((startNode, nextStep));
-
-        // From start to (5,3) is supposed to be 15 steps, not 16. All the others seems fine
 
         while(queue.Any())
         {
@@ -135,46 +126,29 @@ public class Test
                 steps++;
                 previous = position;
                 position = neighbours.First();
-                if(position == targetPosition) // Reached destination
+                if(position == TargetPosition) // Reached destination
                     break;
                 neighbours = GetNeighbours(array, position, previous);
             }
 
             // Right - We are out of the while, which means either we hit de destination, or we reached a fork
-            if(position == targetPosition)
+            // Do we already have a node for this position?
+            if(allNodes.Any(x => x.Position == position))
             {
-                if(allNodes.Any(x => x.Position == position))
-                {
-                    // We already have an end position
-                    var endNode = allNodes.First(x => x.Position == position);
-                    current.node.AddNode(endNode, steps);
-                }
-                else
-                {
-                    var endNode = new Node(){Position = position};
-                    allNodes.Add(endNode);
-                    current.node.AddNode(endNode, steps);
-                }
+                var forkNode = allNodes.First(x => x.Position == position);
+                current.node.AddNode(forkNode, steps);
+                forkNode.AddNode(current.node, steps);
             }
             else
             {
-                // Do we already have a node for this position?
-                if(allNodes.Any(x => x.Position == position))
-                {
-                    // We already have a node
-                    var forkNode = allNodes.First(x => x.Position == position);
-                    current.node.AddNode(forkNode, steps);
-                    forkNode.AddNode(current.node, steps);
-                }
-                else
-                {
-                    var forkNode = new Node(){Position = position};
-                    allNodes.Add(forkNode);
-                    current.node.AddNode(forkNode, steps);
-                    forkNode.AddNode(current.node, steps);
+                // New node
+                var forkNode = new Node(){Position = position};
+                allNodes.Add(forkNode);
+                current.node.AddNode(forkNode, steps);
+                forkNode.AddNode(current.node, steps);
+                if(position != TargetPosition)
                     foreach(var n in neighbours)
                         queue.Enqueue((forkNode, n));
-                }
             }
         }
         return startNode;
