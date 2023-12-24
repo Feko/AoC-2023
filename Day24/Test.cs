@@ -49,7 +49,7 @@ public class Test
         }
 
         solver.Check();
-        var evaluation = solver.Model.Eval(_context.MkAdd(posx, _context.MkAdd(posy, posz)), false); 
+        var evaluation = solver.Model.Eval(_context.MkAdd(posx, posy, posz), false); 
         return Convert.ToInt64(evaluation.ToString());
     }
 
