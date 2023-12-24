@@ -4,6 +4,7 @@ namespace AOC2023.Day24;
 
 public class Test
 {
+    private Context _context = new();
     [Fact]
     public void Part1()
     {
@@ -20,41 +21,36 @@ public class Test
         //var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day24/input.txt"); long expected = 695832176624149; 
         var lines = File.ReadAllLines("/home/feko/src/dotnet/aoc2023/AoC-2023/Day24/sample.txt"); long expected = 47;
         List<Hail> hails = lines.Select(l => new Hail(l)).ToList();
-        var result = SolveWithZ3(hails).Sum();
+        var result = SolveWithZ3(hails);
         Assert.Equal(expected, result);
     }
 
-    private List<long> SolveWithZ3(List<Hail> hails)
+    private long SolveWithZ3(List<Hail> hails)
     {
-        var context = new Context(new Dictionary<string, string>() {{ "proof", "true" }});
-        var solver = context.MkSolver();
+        _context = new Context(new Dictionary<string, string>() {{ "proof", "true" }});
+        var solver = _context.MkSolver();
         
-        (var posx, var posy, var posz) = (context.MkIntConst("posx"), context.MkIntConst("posy"), context.MkIntConst("posz"));
-        (var velx, var vely, var velz) = (context.MkIntConst("velx"), context.MkIntConst("vely"), context.MkIntConst("velz"));
+        (var posx, var posy, var posz) = (_context.MkIntConst("posx"), _context.MkIntConst("posy"), _context.MkIntConst("posz"));
+        (var velx, var vely, var velz) = (_context.MkIntConst("velx"), _context.MkIntConst("vely"), _context.MkIntConst("velz"));
 
         for(int i = 0; i < 3; i++)
         {
             Hail hail = hails[i];
-            var time = context.MkIntConst($"t{i}");
+            var time = _context.MkIntConst($"t{i}");
 
-            solver.Add( context.MkEq(context.MkAdd(posx, context.MkMul(velx, time)), 
-                        context.MkAdd(context.MkInt(Convert.ToInt64(hail.Position.X)), 
-                        context.MkMul(context.MkInt(Convert.ToInt64(hail.Velocity.X)), time))));
+            solver.Add( _context.MkEq(_context.MkAdd(posx, _context.MkMul(velx, time)), 
+                        _context.MkAdd(GetZ3Int(hail.Position.X), _context.MkMul(GetZ3Int(hail.Velocity.X), time))));
 
-            solver.Add( context.MkEq(context.MkAdd(posy, context.MkMul(vely, time)), 
-                        context.MkAdd(context.MkInt(Convert.ToInt64(hail.Position.Y)), 
-                        context.MkMul(context.MkInt(Convert.ToInt64(hail.Velocity.Y)), time))));
+            solver.Add( _context.MkEq(_context.MkAdd(posy, _context.MkMul(vely, time)),
+                        _context.MkAdd(GetZ3Int(hail.Position.Y), _context.MkMul(GetZ3Int(hail.Velocity.Y), time))));
 
-            solver.Add( context.MkEq(context.MkAdd(posz, context.MkMul(velz, time)), 
-                        context.MkAdd(context.MkInt(Convert.ToInt64(hail.Position.Z)), 
-                        context.MkMul(context.MkInt(Convert.ToInt64(hail.Velocity.Z)), time))));
+            solver.Add( _context.MkEq(_context.MkAdd(posz, _context.MkMul(velz, time)), 
+                        _context.MkAdd(GetZ3Int(hail.Position.Z), _context.MkMul(GetZ3Int(hail.Velocity.Z), time))));
         }
 
-        var status = solver.Check();
-        var evaluation = solver.Model.Eval(context.MkAdd(posx, context.MkAdd(posy, posz)), false); 
-
-        var values = solver.Model.Consts.Where(c => c.Key.Name.ToString().StartsWith("pos")).Select(c => c.Value).ToList();
-        return values.Select(x => Convert.ToInt64(x.ToString())).ToList();
+        solver.Check();
+        var evaluation = solver.Model.Eval(_context.MkAdd(posx, _context.MkAdd(posy, posz)), false); 
+        return Convert.ToInt64(evaluation.ToString());
     }
 
     private IEnumerable<(Hail left, Hail right)> GetPermutations(List<Hail> hails)
@@ -63,6 +59,8 @@ public class Test
             for(int j = i + 1; j < hails.Count; j++)
                 yield return (hails[i], hails[j]);
     }
+
+    private IntNum GetZ3Int(double val) => _context.MkInt(Convert.ToInt64(val));
 
     private bool IntersectsInRange(Hail left, Hail right, double min, double max)
     {
